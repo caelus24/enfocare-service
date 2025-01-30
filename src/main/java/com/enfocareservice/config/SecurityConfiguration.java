@@ -37,7 +37,7 @@ public class SecurityConfiguration {
 	public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
 
 		http.csrf().disable().authorizeHttpRequests()
-				.requestMatchers("/api/v1/**", "/api/v1/auth/**", "/enfocare/chat/ws/**").permitAll().anyRequest()
+				.requestMatchers("/", "/api/v1/**", "/api/v1/auth/**", "/enfocare/chat/ws/**").permitAll().anyRequest()
 				.authenticated().and().sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS).and()
 				.authenticationProvider(authenticationProvider)
 				.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
