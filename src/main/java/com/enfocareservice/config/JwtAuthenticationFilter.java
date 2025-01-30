@@ -37,6 +37,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 	@Override
 	protected void doFilterInternal(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response,
 			@NonNull FilterChain filterChain) throws ServletException, IOException {
+		
+		// Skip authentication for specific public routes
+        if (request.getRequestURI().equals("/") || request.getRequestURI().startsWith("/api/v1/auth") || request.getRequestURI().startsWith("/enfocare/chat/ws")) {
+            filterChain.doFilter(request, response); // Allow access
+            return;
+        }
 
 		final String authHeader = request.getHeader("Authorization");
 		final String jwt;
