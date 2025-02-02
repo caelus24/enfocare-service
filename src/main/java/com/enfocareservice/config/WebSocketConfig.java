@@ -13,7 +13,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
         registry.addEndpoint("/enfocare/chat/ws")
-                .setAllowedOrigins("https://enfocare-service-production.up.railway.app") // Explicitly allow Railway
+                .setAllowedOrigins("https://enfocare-service-production.up.railway.app", "*") // Allow all origins for testing
                 .withSockJS(); // Ensure compatibility with non-WebSocket clients
     }
 
