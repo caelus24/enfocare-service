@@ -20,61 +20,71 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Component
 @RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
-	@Autowired
-	private TokenRepository tokenRepository;
+    private static final Logger logger = LoggerFactory.getLogger(JwtAuthenticationFilter.class);
 
-	@Autowired
-	private JwtService jwtService;
+    @Autowired
+    private TokenRepository tokenRepository;
 
-	@Autowired
-	private UserDetailsService userDetailsService;
+    @Autowired
+    private JwtService jwtService;
 
-	@Override
-	protected void doFilterInternal(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response,
-			@NonNull FilterChain filterChain) throws ServletException, IOException {
-		
-		// Skip authentication for specific public routes
-        if (request.getRequestURI().equals("/") || request.getRequestURI().startsWith("/api/v1/auth") || request.getRequestURI().startsWith("/enfocare/chat/ws")) {
-            filterChain.doFilter(request, response); // Allow access
+    @Autowired
+    private UserDetailsService userDetailsService;
+
+    @Override
+    protected void doFilterInternal(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response,
+                                    @NonNull FilterChain filterChain) throws ServletException, IOException {
+        
+        String requestURI = request.getRequestURI();
+        
+        // ✅ Skip authentication for public endpoints and WebSocket connections
+        if (requestURI.equals("/") || 
+            requestURI.startsWith("/api/v1/auth") || 
+            requestURI.startsWith("/enfocare/chat/ws")) {
+            
+            logger.info("Skipping authentication for: {}", requestURI);
+            filterChain.doFilter(request, response);
             return;
         }
 
-		final String authHeader = request.getHeader("Authorization");
-		final String jwt;
-		final String userEmail;
-		if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-			filterChain.doFilter(request, response);
-			return;
-		}
+        final String authHeader = request.getHeader("Authorization");
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            logger.warn("Missing or invalid Authorization header for: {}", requestURI);
+            filterChain.doFilter(request, response);
+            return;
+        }
 
-		jwt = authHeader.substring(7);
-		userEmail = jwtService.extractUsername(jwt);
+        final String jwt = authHeader.substring(7);
+        final String userEmail = jwtService.extractUsername(jwt);
 
-		if (userEmail != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-			UserDetails userDetails = this.userDetailsService.loadUserByUsername(userEmail);
-			var isTokenValid = tokenRepository.findByToken(jwt).map(t -> !t.getExpired() && !t.getRevoked())
-					.orElse(false);
+        if (userEmail != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+            UserDetails userDetails = this.userDetailsService.loadUserByUsername(userEmail);
+            boolean isTokenValid = tokenRepository.findByToken(jwt)
+                                                  .map(t -> !t.getExpired() && !t.getRevoked())
+                                                  .orElse(false);
 
-			if (jwtService.isTokenValid(jwt, userDetails) && isTokenValid) {
-				UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(
-						userDetails, null, userDetails.getAuthorities());
+            if (jwtService.isTokenValid(jwt, userDetails) && isTokenValid) {
+                UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(
+                        userDetails, null, userDetails.getAuthorities());
 
-				authenticationToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-				SecurityContextHolder.getContext().setAuthentication(authenticationToken);
-			} else {
-				logger.debug("Token validation failed");
-			}
+                authenticationToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                SecurityContextHolder.getContext().setAuthentication(authenticationToken);
+                logger.info("Authentication successful for user: {}", userEmail);
+            } else {
+                logger.warn("Token validation failed for user: {}", userEmail);
+            }
 
-		} else {
-			logger.debug("User details not found for the user: " + userEmail);
-		}
-		filterChain.doFilter(request, response);
-
-	}
-
+        } else {
+            logger.warn("User details not found or already authenticated for: {}", userEmail);
+        }
+        
+        filterChain.doFilter(request, response);
+    }
 }
