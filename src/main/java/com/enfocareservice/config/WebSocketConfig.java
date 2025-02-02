@@ -10,40 +10,40 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.SignatureException;
 import io.jsonwebtoken.ExpiredJwtException;
 import org.springframework.http.HttpStatus;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Configuration
 @EnableWebSocketMessageBroker
 public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
-    private String secretKey = "2D9A4F1C0E238A653BC1170F3B32A6916E72597D63596A120AC9B76943AAB9E5";
+    private static final Logger log = LoggerFactory.getLogger(WebSocketConfig.class);
+    private String secretKey = System.getenv("JWT_SECRET_KEY"); // Read from environment variable for security
 
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
-        // Register the WebSocket endpoint with JWT authentication via HandshakeInterceptor
         registry.addEndpoint("/enfocare/chat/ws")
-                .setAllowedOrigins("https://enfocare-service-production.up.railway.app") // Allow only Railway frontend
+                .setAllowedOrigins("https://enfocare-service-production.up.railway.app")
                 .withSockJS()
-                .setHandshakeHandler(new CustomHandshakeHandler()) // Handle authentication during handshake
-                .addInterceptors(new JwtHandshakeInterceptor()); // Intercept handshake for JWT validation
+                .setHandshakeHandler(new CustomHandshakeHandler())
+                .addInterceptors(new JwtHandshakeInterceptor());
     }
 
     @Override
     public void configureMessageBroker(MessageBrokerRegistry registry) {
-        registry.enableSimpleBroker("/topic", "/queue"); // Enable message broker for topic and queue destinations
-        registry.setApplicationDestinationPrefixes("/app"); // Prefix for app-level destinations
+        registry.enableSimpleBroker("/topic", "/queue");
+        registry.setApplicationDestinationPrefixes("/app");
     }
 
-    // Optionally, if you need to configure security to disable CSRF for WebSockets and allow other resources
     public void configure(HttpSecurity http) throws Exception {
         http
             .authorizeRequests()
-            .antMatchers("/enfocare/chat/ws").permitAll() // Permit access to WebSocket endpoint
+            .antMatchers("/enfocare/chat/ws").permitAll()
             .anyRequest().authenticated()
             .and()
-            .csrf().disable(); // Disable CSRF for WebSocket
+            .csrf().disable();
     }
 
-    // Custom HandshakeInterceptor to extract and validate JWT
     public class JwtHandshakeInterceptor extends HttpSessionHandshakeInterceptor {
         @Override
         public boolean beforeHandshake(
@@ -51,49 +51,44 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
             org.springframework.web.socket.server.HandshakeResponse response,
             org.springframework.web.socket.WebSocketHandler wsHandler) throws Exception {
 
-            // Extract token from WebSocket handshake (headers or query parameter)
             String token = request.getHeader("Authorization");
             if (token != null && token.startsWith("Bearer ")) {
-                token = token.substring(7); // Remove "Bearer " prefix
-
-                // Validate the token (use your JWT validation logic)
+                token = token.substring(7);
                 if (isValidToken(token)) {
-                    return true; // Proceed with handshake
+                    return true;
                 }
             }
-            response.setStatusCode(HttpStatus.FORBIDDEN); // Reject connection if invalid token
+            response.setStatusCode(HttpStatus.FORBIDDEN);
             return false;
         }
 
-        // JWT validation logic
         private boolean isValidToken(String token) {
             try {
-                // Parse the token and validate signature, expiration, etc.
                 Claims claims = Jwts.parser()
-                        .setSigningKey(secretKey) // Set the secret key to validate the signature
-                        .parseClaimsJws(token)    // Parse the token
-                        .getBody();               // Extract the claims from the token
+                        .setSigningKey(secretKey)
+                        .parseClaimsJws(token)
+                        .getBody();
 
-                // Check if the token has expired
                 if (claims.getExpiration().before(new java.util.Date())) {
-                    return false; // Token is expired
+                    log.error("Token has expired");
+                    return false;
                 }
-
-                return true; // Token is valid
+                return true;
             } catch (SignatureException | ExpiredJwtException e) {
-                // Invalid signature or expired token
+                log.error("Invalid JWT token: {}", e.getMessage());
+                return false;
+            } catch (Exception e) {
+                log.error("Unexpected error during token validation: {}", e.getMessage());
                 return false;
             }
         }
     }
 
-    // Custom HandshakeHandler to handle authentication logic during WebSocket handshake
     public class CustomHandshakeHandler extends org.springframework.web.socket.server.support.DefaultHandshakeHandler {
         @Override
         public boolean doHandshake(org.springframework.web.socket.server.HandshakeRequest request,
                                     org.springframework.web.socket.server.HandshakeResponse response,
                                     org.springframework.web.socket.WebSocketHandler handler) throws Exception {
-            // Optionally, you can add logic for extracting or validating JWT here as well
             return super.doHandshake(request, response, handler);
         }
     }
