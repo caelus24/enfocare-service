@@ -10,16 +10,15 @@ import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerCo
 @EnableWebSocketMessageBroker
 public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
-    @Override
-    public void registerStompEndpoints(StompEndpointRegistry registry) {
-        registry.addEndpoint("/enfocare/chat/ws")
-                .setAllowedOrigins("*") // Allow all origins for testing
-                .withSockJS(); // Ensure compatibility with non-WebSocket clients
-    }
+	@Override
+	public void registerStompEndpoints(StompEndpointRegistry registry) {
+		registry.addEndpoint("/enfocare/chat/ws").setAllowedOrigins("*") // Allow all origins for testing
+				.withSockJS(); // Ensure compatibility with non-WebSocket clients
+	}
 
-    @Override
-    public void configureMessageBroker(MessageBrokerRegistry registry) {
-        registry.enableSimpleBroker("/topic", "/queue"); // Supports public & private messaging
-        registry.setApplicationDestinationPrefixes("/app");
-    }
+	@Override
+	public void configureMessageBroker(MessageBrokerRegistry registry) {
+		registry.enableSimpleBroker("/messages"); // Simpler broker topic
+		registry.setApplicationDestinationPrefixes("/app");
+	}
 }

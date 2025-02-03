@@ -35,36 +35,31 @@ public class SecurityConfiguration {
 
 	@Bean
 	public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-		http.csrf().disable().headers().frameOptions().disable() // Disable frame options for debugging
-				.and().authorizeHttpRequests()
-				.requestMatchers("/", "/api/v1/**", "/api/v1/auth/**", "/enfocare/chat/ws/**").permitAll().anyRequest()
+
+		http.csrf().disable().authorizeHttpRequests()
+				.requestMatchers("/api/v1/**", "/api/v1/auth/**", "/enfocare/chat/ws/**").permitAll().anyRequest()
 				.authenticated().and().sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS).and()
 				.authenticationProvider(authenticationProvider)
 				.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
 				.logout(logout -> logout.logoutUrl("/api/v1/auth/logout").addLogoutHandler(logoutHandler)
-						.logoutSuccessHandler((request, response, authentication) -> {
-							SecurityContextHolder.clearContext();
-							System.out.println("User logged out successfully.");
-						}));
+						.logoutSuccessHandler(
+								(request, response, authentication) -> SecurityContextHolder.clearContext()));
 
 		return http.build();
+
 	}
 
 	@Bean
 	public CorsConfigurationSource corsConfigurationSource() {
 		CorsConfiguration configuration = new CorsConfiguration();
-		configuration.setAllowedOrigins(List.of("*"));
+		configuration.setAllowedOriginPatterns(List.of("*")); // Allow all origins
 		configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
 		configuration.setAllowedHeaders(List.of("Authorization", "Content-Type"));
 		configuration.setExposedHeaders(List.of("Authorization"));
-		configuration.setAllowCredentials(true); // Required for authentication headers
-
-		// Allow WebSockets (Required for Railway WebSocket connections)
-		configuration.addAllowedOrigin("wss://enfocare-service-production.up.railway.app");
-
+		configuration.setAllowCredentials(true);
 		UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
 		source.registerCorsConfiguration("/**", configuration);
-
 		return source;
 	}
+
 }
