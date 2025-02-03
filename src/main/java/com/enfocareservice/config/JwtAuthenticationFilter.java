@@ -26,9 +26,7 @@ import lombok.RequiredArgsConstructor;
 @Component
 @RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
-
 	private static final Logger logger = LoggerFactory.getLogger(JwtAuthenticationFilter.class);
-
 	@Autowired
 	private TokenRepository tokenRepository;
 
@@ -42,21 +40,20 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 	protected void doFilterInternal(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response,
 			@NonNull FilterChain filterChain) throws ServletException, IOException {
 
-		String requestURI = request.getRequestURI();
-
 		final String authHeader = request.getHeader("Authorization");
+		final String jwt;
+		final String userEmail;
 		if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-			logger.warn("Missing or invalid Authorization header for: {}", requestURI);
 			filterChain.doFilter(request, response);
 			return;
 		}
 
-		final String jwt = authHeader.substring(7);
-		final String userEmail = jwtService.extractUsername(jwt);
+		jwt = authHeader.substring(7);
+		userEmail = jwtService.extractUsername(jwt);
 
 		if (userEmail != null && SecurityContextHolder.getContext().getAuthentication() == null) {
 			UserDetails userDetails = this.userDetailsService.loadUserByUsername(userEmail);
-			boolean isTokenValid = tokenRepository.findByToken(jwt).map(t -> !t.getExpired() && !t.getRevoked())
+			var isTokenValid = tokenRepository.findByToken(jwt).map(t -> !t.getExpired() && !t.getRevoked())
 					.orElse(false);
 
 			if (jwtService.isTokenValid(jwt, userDetails) && isTokenValid) {
@@ -65,15 +62,15 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
 				authenticationToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
 				SecurityContextHolder.getContext().setAuthentication(authenticationToken);
-				logger.info("Authentication successful for user: {}", userEmail);
 			} else {
-				logger.warn("Token validation failed for user: {}", userEmail);
+				logger.debug("Token validation failed");
 			}
 
 		} else {
-			logger.warn("User details not found or already authenticated for: {}", userEmail);
+			logger.debug("User details not found for the user: " + userEmail);
 		}
-
 		filterChain.doFilter(request, response);
+
 	}
+
 }
