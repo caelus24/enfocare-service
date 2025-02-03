@@ -40,7 +40,7 @@ public class SecurityConfiguration {
             .headers().frameOptions().disable() // Disable frame options for debugging
             .and()
             .authorizeHttpRequests()
-                .requestMatchers("/", "/api/v1/**", "/api/v1/auth/**", "/enfocare/chat/ws/**").permitAll()
+                .requestMatchers("/", "/error", "/api/v1/**", "/api/v1/auth/**", "/enfocare/chat/ws/**").permitAll()
                 .anyRequest().authenticated()
             .and()
             .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
