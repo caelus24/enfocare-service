@@ -68,6 +68,8 @@ public class JwtService {
 	}
 
 	private Claims extractAllClaims(String token) {
+
+		System.err.println("PUTANGINA MO: " + token); // Add this line
 		return Jwts.parserBuilder().setSigningKey(getSignInKey()).build().parseClaimsJws(token).getBody();
 	}
 
