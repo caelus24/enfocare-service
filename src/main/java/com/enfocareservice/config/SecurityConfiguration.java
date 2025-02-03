@@ -37,6 +37,8 @@ public class SecurityConfiguration {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
             .csrf().disable()
+            .headers().frameOptions().disable() // Disable frame options for debugging
+            .and()
             .authorizeHttpRequests()
                 .requestMatchers("/", "/api/v1/**", "/api/v1/auth/**", "/enfocare/chat/ws/**").permitAll()
                 .anyRequest().authenticated()
@@ -60,7 +62,7 @@ public class SecurityConfiguration {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOriginPatterns(List.of("*")); // Allow all origins temporarily (for mobile app)
+        configuration.setAllowedOrigins(List.of("https://enfocare-service-production.up.railway.app"));
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("Authorization", "Content-Type"));
         configuration.setExposedHeaders(List.of("Authorization"));
