@@ -35,11 +35,11 @@ public class AuthenticationController {
 	public ResponseEntity<AuthenticationResponse> register(@RequestBody RegisterRequest registerRequest) {
 		try {
 			LOGGER.info("AuthenticationController : register started {}", registerRequest);
-			LOGGER.info("Register request received TANGINA: {}", registerRequest);
+			LOGGER.info("Register request received SHAZAM: {}", registerRequest);
 			AuthenticationResponse response = authenticationService.register(registerRequest);
 			return ResponseEntity.ok(response);
 		} catch (Exception e) {
-			LOGGER.error("Registration  TANGINA failed for {}", registerRequest, e);
+			LOGGER.error("Registration SHAZAM failed for {}", registerRequest, e);
 			return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
 		}
 	}
