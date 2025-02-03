@@ -6,6 +6,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
@@ -25,6 +27,8 @@ public class JwtService {
 	private long jwtExpiration;
 	@Value("${application.security.jwt.refresh-token.expiration}")
 	private long refreshExpiration;
+
+	private static final Logger logger = LoggerFactory.getLogger(JwtService.class);
 
 	public String extractUsername(String token) {
 		return extractClaim(token, Claims::getSubject);
@@ -69,7 +73,11 @@ public class JwtService {
 
 	private Claims extractAllClaims(String token) {
 
-		System.err.println("PUTANGINA MO: " + token); // Add this line
+		if (token == null || token.isEmpty()) {
+			logger.info("JWT Token is null or empty PUTANGINA");
+		} else {
+			logger.info("JWT PUTANGINA Token: {}", token); // Use logger instead of System.out.println
+		}
 		return Jwts.parserBuilder().setSigningKey(getSignInKey()).build().parseClaimsJws(token).getBody();
 	}
 
