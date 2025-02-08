@@ -74,9 +74,9 @@ public class JwtService {
 	private Claims extractAllClaims(String token) {
 
 		if (token == null || token.isEmpty()) {
-			logger.info("JWT Token is null or empty PUTANGINA");
+			logger.info("JWT Token is null or empty TUNAMAYO");
 		} else {
-			logger.info("JWT PUTANGINA Token: {}", token); // Use logger instead of System.out.println
+			logger.info("JWT TUNAMAYO Token: {}", token); // Use logger instead of System.out.println
 		}
 		return Jwts.parserBuilder().setSigningKey(getSignInKey()).build().parseClaimsJws(token).getBody();
 	}
