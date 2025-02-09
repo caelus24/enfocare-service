@@ -47,9 +47,9 @@ public class MedicalFileService {
         return medicalFileRepository.findDistinctPatientEmailsByDoctorEmail(doctorEmail);
     }
 
-    public void protectPdfFile(String paramFile) throws MalformedURLException {
+    public void protectPdfFile(String paramFile) {
         File file = new File(paramFile);
-        logger.info("Processing file encryption: {}", file.getAbsolutePath());
+        logger.info("Processing file encryption: {} TUNAMAYO", file.getAbsolutePath());
 
         try {
             PDDocument document = Loader.loadPDF(file);
@@ -58,14 +58,14 @@ public class MedicalFileService {
             spp.setEncryptionKeyLength(128);
             spp.setPermissions(ap);
             document.protect(spp);
-            logger.info("Document encrypted successfully.");
+            logger.info("Document encrypted successfully. TUNAMAYO");
 
             File tempFile = File.createTempFile("temp_", ".pdf");
             document.save(tempFile.getAbsolutePath());
             document.close();
             Files.move(tempFile.toPath(), file.toPath(), StandardCopyOption.REPLACE_EXISTING);
         } catch (IOException e) {
-            logger.error("Error encrypting PDF file: {}", paramFile, e);
+            logger.error("Error encrypting PDF file: {} TUNAMAYO", paramFile, e);
         }
     }
 
@@ -95,7 +95,7 @@ public class MedicalFileService {
             medicalFileRepository.save(medicalFileEntity);
             logger.info("File uploaded successfully: {}", filePath);
         } catch (IOException e) {
-            logger.error("Error uploading file for patient: {}", patientEmail, e);
+            logger.error("Error uploading file for patient: {} TUNAMAYO", patientEmail, e);
         }
     }
 
@@ -117,15 +117,15 @@ public class MedicalFileService {
                 if (resource.exists()) {
                     return resource;
                 } else {
-                    logger.error("File not found: {}", fileId);
+                    logger.error("File not found: {} TUNAMAYO", fileId);
                     throw new MalformedURLException("File not found " + fileId);
                 }
             } else {
-                logger.error("File entity not found for ID: {}", fileId);
+                logger.error("File entity not found for ID: {} TUNAMAYO", fileId);
                 throw new MalformedURLException("File entity not found " + fileId);
             }
         } catch (Exception e) {
-            logger.error("Error loading file as resource for ID: {}", fileId, e);
+            logger.error("Error loading file as resource for ID: {} TUNAMAYO", fileId, e);
             throw new MalformedURLException("Error loading file " + fileId);
         }
     }
