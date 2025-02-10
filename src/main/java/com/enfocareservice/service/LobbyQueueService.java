@@ -26,13 +26,15 @@ public class LobbyQueueService {
     }
 
     public LobbyQueue saveEntry(LobbyQueue lobbyQueue) {
+        // Remove existing entries for the patient before adding a new one
+        lobbyQueueRepository.deleteByPatient(lobbyQueue.getPatient());
+
         // Check if the patient is already in the queue for this doctor
         LobbyQueueEntity existingEntry = lobbyQueueRepository.findByDoctorAndPatient(
                 lobbyQueue.getDoctor(), lobbyQueue.getPatient());
 
         if (existingEntry != null) {
-            // Return the existing entry if found
-            return lobbyQueueMapper.map(existingEntry);
+            return lobbyQueueMapper.map(existingEntry); // Return the existing entry
         }
 
         // If not in the queue, save the new entry
@@ -42,36 +44,25 @@ public class LobbyQueueService {
         lobbyQueueEntity.setTimeIn(lobbyQueue.getTimeIn());
 
         LobbyQueueEntity savedEntity = lobbyQueueRepository.save(lobbyQueueEntity);
-
-        LobbyQueue resLobbyQueue = lobbyQueueMapper.map(savedEntity);
-        resLobbyQueue.setId(savedEntity.getId());
-
-        return resLobbyQueue;
+        return lobbyQueueMapper.map(savedEntity);
     }
 
     public List<LobbyQueue> getLobbyQueueByDoctor(String doctor) {
-        List<LobbyQueue> lobbyQueues = null;
         List<LobbyQueueEntity> lobbyQueueEntities = lobbyQueueRepository.findByDoctor(doctor);
 
         if (!CollectionUtils.isEmpty(lobbyQueueEntities)) {
-            lobbyQueues = lobbyQueueEntities.stream().map(lobbyQueueMapper::map).collect(Collectors.toList());
+            return lobbyQueueEntities.stream().map(lobbyQueueMapper::map).collect(Collectors.toList());
         }
-        return lobbyQueues;
+        return List.of();
     }
 
-    public LobbyQueue selectEntityByDoctorAndPatien(String doctor, String patient) {
-        LobbyQueue lobbyQueue = null;
+    public LobbyQueue selectEntityByDoctorAndPatient(String doctor, String patient) {
         LobbyQueueEntity lobbyQueueEntity = lobbyQueueRepository.findByDoctorAndPatient(doctor, patient);
-
-        if (lobbyQueueEntity != null) {
-            lobbyQueue = lobbyQueueMapper.map(lobbyQueueEntity);
-        }
-        return lobbyQueue;
+        return (lobbyQueueEntity != null) ? lobbyQueueMapper.map(lobbyQueueEntity) : null;
     }
 
     public void deleteEntityByDoctorAndPatient(String doctor, String patient) {
         LobbyQueueEntity lobbyQueueEntity = lobbyQueueRepository.findByDoctorAndPatient(doctor, patient);
-        
         if (lobbyQueueEntity != null) {
             lobbyQueueRepository.delete(lobbyQueueEntity);
         }
@@ -79,6 +70,18 @@ public class LobbyQueueService {
         int countAfterDeletion = lobbyQueueRepository.countByDoctor(doctor);
         if (countAfterDeletion == 0) {
             System.out.println("No entities found for email: " + doctor);
+        }
+    }
+
+    public void pickUpPatient(String doctor, String patient) {
+        // Remove the patient from the queue
+        LobbyQueueEntity lobbyQueueEntity = lobbyQueueRepository.findByDoctorAndPatient(doctor, patient);
+
+        if (lobbyQueueEntity != null) {
+            lobbyQueueRepository.delete(lobbyQueueEntity);
+            System.out.println("Patient " + patient + " removed from queue after being picked up.");
+        } else {
+            System.out.println("Patient not found in queue.");
         }
     }
 }
