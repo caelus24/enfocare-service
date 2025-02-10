@@ -1,5 +1,7 @@
 package com.enfocareservice.service;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -11,31 +13,39 @@ import com.enfocareservice.repository.VoximplantAccountRepository;
 @Service
 public class VoximplantAccountService {
 
-	@Autowired
-	private VoximplantAccountRepository voximplantAccountRepository;
+    private static final Logger logger = LoggerFactory.getLogger(VoximplantAccountService.class);
 
-	@Autowired
-	private VoximplantAccountMapper voximplantAccountMapper;
+    @Autowired
+    private VoximplantAccountRepository voximplantAccountRepository;
 
-	public VoximplantAccount createAccount(VoximplantAccount voximplantAccount) {
+    @Autowired
+    private VoximplantAccountMapper voximplantAccountMapper;
 
-		System.err.println();
+    public VoximplantAccount createAccount(VoximplantAccount voximplantAccount) {
+        logger.info("Creating Voximplant account for user: {} TUNAMAYO", voximplantAccount.getUser());
 
-		VoximplantAccountEntity toSave = new VoximplantAccountEntity();
+        VoximplantAccountEntity toSave = new VoximplantAccountEntity();
+        toSave.setUser(voximplantAccount.getUser());
+        toSave.setVoxId(voximplantAccount.getVoxId());
+        toSave.setVoxPw(voximplantAccount.getVoxPw());
+        toSave.setVoxUsername(voximplantAccount.getVoxUsername());
 
-		toSave.setUser(voximplantAccount.getUser());
-		toSave.setVoxId(voximplantAccount.getVoxId());
-		toSave.setVoxPw(voximplantAccount.getVoxPw());
-		toSave.setVoxUsername(voximplantAccount.getVoxUsername());
+        VoximplantAccountEntity savedEntity = voximplantAccountRepository.save(toSave);
+        logger.info("Voximplant account successfully created with ID: {} TUNAMAYO", savedEntity.getId());
 
-		return voximplantAccountMapper.map(voximplantAccountRepository.save(toSave));
+        return voximplantAccountMapper.map(savedEntity);
+    }
 
-	}
+    public VoximplantAccount getAccountByEmail(String email) {
+        logger.info("Fetching Voximplant account for email: {}", email);
 
-	public VoximplantAccount getAccountByEmail(String email) {
+        VoximplantAccountEntity entity = voximplantAccountRepository.findByUser(email);
+        if (entity == null) {
+            logger.error("No Voximplant account found for email: {} TUNAMAYO", email);
+            return null;
+        }
 
-		System.err.println("getAccountByEmail " + email);
-		return voximplantAccountMapper.map(voximplantAccountRepository.findByUser(email));
-	}
-
+        logger.info("Voximplant account found for email: {} TUNAMAYO", email);
+        return voximplantAccountMapper.map(entity);
+    }
 }
