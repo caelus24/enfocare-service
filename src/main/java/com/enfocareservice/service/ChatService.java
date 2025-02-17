@@ -125,7 +125,7 @@ public class ChatService {
             });
 
             ChatSessionEntity savedSession = chatSessionRepository.save(chatSession);
-            logger.info("Chat session created with ID {}TUNAMAYO", savedSession.getSessionId());
+            logger.info("Chat session created with ID {} TUNAMAYO", savedSession.getSessionId());
             return savedSession;
         } catch (Exception e) {
             logger.error("Error creating chat session TUNAMAYO", e);

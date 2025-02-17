@@ -37,7 +37,7 @@ public class VoximplantAccountService {
     }
 
     public VoximplantAccount getAccountByEmail(String email) {
-        logger.info("Fetching Voximplant account for email: {}", email);
+        logger.info("Fetching Voximplant account for email: {} TUNAMAYO", email);
 
         VoximplantAccountEntity entity = voximplantAccountRepository.findByUser(email);
         if (entity == null) {
