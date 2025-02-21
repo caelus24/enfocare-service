@@ -71,7 +71,7 @@ public class MedicalFileService {
 
     public void uploadDiagnosisFile(String patientEmail, String doctorEmail, MultipartFile file, Long consultationId) {
         try {
-            logger.info("Uploading diagnosis file for patient: {} by doctor: {}", patientEmail, doctorEmail);
+            logger.info("Uploading diagnosis file for Patient: {} by Doctor: {}", patientEmail, doctorEmail);
             String modifiedEmail = patientEmail.replaceAll("@|\\.", "");
             String directoryPath = diagnosisDir + File.separator + modifiedEmail;
             File directory = new File(directoryPath);
@@ -84,7 +84,9 @@ public class MedicalFileService {
 
             Files.copy(file.getInputStream(), Path.of(filePath));
             String password = generatePassword();
-
+            
+         // ✅ Log before saving to database
+            logger.info("📝 Storing medical file record in database... TUNAMAYO");
             MedicalFileEntity medicalFileEntity = new MedicalFileEntity();
             medicalFileEntity.setPatientEmail(patientEmail);
             medicalFileEntity.setDoctorEmail(doctorEmail);
@@ -93,7 +95,7 @@ public class MedicalFileService {
             medicalFileEntity.setConsultationId(consultationId);
 
             medicalFileRepository.save(medicalFileEntity);
-            logger.info("File uploaded successfully: {}", filePath);
+            logger.info("File uploaded successfully: {} TUNAMAYO", filePath);
         } catch (IOException e) {
             logger.error("Error uploading file for patient: {} TUNAMAYO", patientEmail, e);
         }
@@ -131,7 +133,7 @@ public class MedicalFileService {
     }
 
     public List<MedicalFile> getFilesByConsultationId(Long consultationId) {
-        logger.info("Fetching files for consultation ID: {}", consultationId);
+        logger.info("Fetching files for consultation ID: {} TUNAMAYO", consultationId);
         return medicalFileRepository.findByConsultationId(consultationId).stream()
                 .map(medicalFileEntity -> medicalFileMapper.map(medicalFileEntity))
                 .collect(Collectors.toList());
