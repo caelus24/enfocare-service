@@ -34,12 +34,12 @@ public class AuthenticationController {
 	@PostMapping("/register")
 	public ResponseEntity<AuthenticationResponse> register(@RequestBody RegisterRequest registerRequest) {
 		try {
-			LOGGER.info("AuthenticationController : register started {}", registerRequest);
-			LOGGER.info("Register request received SHAZAM: {}", registerRequest);
+			LOGGER.info("AuthenticationController : register started {} HTUA", registerRequest);
+			LOGGER.info("Register request received: {} HTUA", registerRequest);
 			AuthenticationResponse response = authenticationService.register(registerRequest);
 			return ResponseEntity.ok(response);
 		} catch (Exception e) {
-			LOGGER.error("Registration SHAZAM failed for {}", registerRequest, e);
+			LOGGER.error("Registration failed for {} HTUA", registerRequest, e);
 			return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
 		}
 	}
