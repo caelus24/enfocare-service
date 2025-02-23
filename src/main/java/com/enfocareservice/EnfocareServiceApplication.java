@@ -15,9 +15,9 @@ public class EnfocareServiceApplication {
 	private static final Logger logger = LoggerFactory.getLogger(EnfocareServiceApplication.class);
 	
     public static void main(String[] args) {
-    	 logger.info("🚀 Starting Enfocare Service Application... APP");
+    	 logger.info("🚀 Starting Enfocare Service Application... TOGE");
          SpringApplication.run(EnfocareServiceApplication.class, args);
-         logger.info("✅ Enfocare Service Application Started Successfully! APP");
+         logger.info("✅ Enfocare Service Application Started Successfully! TOGE");
     }
 
 }

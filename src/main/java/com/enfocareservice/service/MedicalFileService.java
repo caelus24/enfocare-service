@@ -149,9 +149,17 @@ public class MedicalFileService {
     }
 
     public List<MedicalFile> getFilesByConsultationId(Long consultationId) {
-        logger.info("Fetching files for consultation ID: {} ELIF", consultationId);
-        return medicalFileRepository.findByConsultationId(consultationId).stream()
-                .map(medicalFileEntity -> medicalFileMapper.map(medicalFileEntity))
-                .collect(Collectors.toList());
+    	 logger.info("Fetching files for consultation ID: {}", consultationId);
+    	    return medicalFileRepository.findByConsultationId(consultationId).stream()
+    	            .map(medicalFileEntity -> {
+    	                MedicalFile file = medicalFileMapper.map(medicalFileEntity);
+    	                
+    	                // 🛠 Ensure file URL is correctly set
+    	                String baseUrl = "https://enfocare-service-production.up.railway.app/enfocare/medical-file/download/";
+    	                file.setFileUrl(baseUrl + file.getId());
+    	                
+    	                return file;
+    	            })
+    	            .collect(Collectors.toList());
     }
 }

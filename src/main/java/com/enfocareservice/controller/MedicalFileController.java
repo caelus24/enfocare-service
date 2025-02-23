@@ -152,17 +152,16 @@ public class MedicalFileController {
           }
     }
 
-    /**
-     * Retrieve all files associated with a consultation.
-     */
-    @GetMapping("/consultation/{consultationId}")
-    public ResponseEntity<List<MedicalFile>> getFilesByConsultationId(@PathVariable Long consultationId) {
+    @GetMapping("/consultation/{consultationId}/doctor/{doctorEmail}")
+    public ResponseEntity<List<MedicalFile>> getFilesByConsultationAndDoctor(
+            @PathVariable Long consultationId, @PathVariable String doctorEmail) {
         try {
-            List<MedicalFile> files = medicalFileService.getFilesByConsultationId(consultationId);
+            List<MedicalFile> files = medicalFileService.getFilesByConsultationAndDoctor(consultationId, doctorEmail);
             return ResponseEntity.ok(files);
         } catch (Exception e) {
-            logger.error("❌ Failed to fetch files for Consultation ID: {} ELIF", consultationId, e);
+            logger.error("❌ Failed to fetch files for Consultation ID: {} and Doctor: {}", consultationId, doctorEmail, e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
-          }
+        }
     }
+
 }
