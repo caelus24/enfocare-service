@@ -90,9 +90,6 @@ public class MedicalFileService {
                 logger.info("📂 Created directory: {} (Success: {}) ELIF", directoryPath, created);
             }
 
-            String originalFilename = file.getOriginalFilename();
-            String filePath = Paths.get(directoryPath, originalFilename).toString();
-
          // Save the file with original filename
             String originalFilename = file.getOriginalFilename();
             String filePath = Paths.get(directoryPath, originalFilename).toString();
