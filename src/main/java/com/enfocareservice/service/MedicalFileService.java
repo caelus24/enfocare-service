@@ -49,7 +49,7 @@ public class MedicalFileService {
 
     public void protectPdfFile(String paramFile) {
         File file = new File(paramFile);
-        logger.info("Processing file encryption: {} TUNAMAYO", file.getAbsolutePath());
+        logger.info("Processing file encryption: {} ELIF", file.getAbsolutePath());
 
         try {
             PDDocument document = Loader.loadPDF(file);
@@ -58,47 +58,66 @@ public class MedicalFileService {
             spp.setEncryptionKeyLength(128);
             spp.setPermissions(ap);
             document.protect(spp);
-            logger.info("Document encrypted successfully. TUNAMAYO");
+            logger.info("Document encrypted successfully. ELIF");
 
             File tempFile = File.createTempFile("temp_", ".pdf");
             document.save(tempFile.getAbsolutePath());
             document.close();
             Files.move(tempFile.toPath(), file.toPath(), StandardCopyOption.REPLACE_EXISTING);
         } catch (IOException e) {
-            logger.error("Error encrypting PDF file: {} TUNAMAYO", paramFile, e);
+            logger.error("Error encrypting PDF file: {} ELIF", paramFile, e);
         }
     }
 
     public void uploadDiagnosisFile(String patientEmail, String doctorEmail, MultipartFile file, Long consultationId) {
         try {
-            logger.info("Uploading diagnosis file for Patient: {} by Doctor: {}", patientEmail, doctorEmail);
+            logger.info("Uploading diagnosis file for Patient: {} by Doctor: {} ELIF", patientEmail, doctorEmail);
+            
+         // ✅ Check if file is received
+            if (file == null || file.isEmpty()) {
+                logger.error("❌ No file received! Upload failed. ELIF");
+                return;
+            }
+            logger.info("📄 Received file: {} ELIF", file.getOriginalFilename());
+            logger.info("📏 File Size: {} bytes ELIF", file.getSize());
+            
+         // ✅ Ensure directory exists
             String modifiedEmail = patientEmail.replaceAll("@|\\.", "");
             String directoryPath = diagnosisDir + File.separator + modifiedEmail;
             File directory = new File(directoryPath);
             if (!directory.exists()) {
-                directory.mkdirs();
+                boolean created = directory.mkdirs();
+                logger.info("📂 Created directory: {} (Success: {}) ELIF", directoryPath, created);
             }
 
             String originalFilename = file.getOriginalFilename();
             String filePath = Paths.get(directoryPath, originalFilename).toString();
 
-            Files.copy(file.getInputStream(), Path.of(filePath));
-            String password = generatePassword();
+         // Save the file with original filename
+            String originalFilename = file.getOriginalFilename();
+            String filePath = Paths.get(directoryPath, originalFilename).toString();
+
+            // Save the file to the mounted storage on hosting platform(currently: Railway)
+            Files.copy(file.getInputStream(), Path.of(filePath), StandardCopyOption.REPLACE_EXISTING);
+            logger.info("✅ File successfully saved to: {} ELIF", filePath);
             
-         // ✅ Log before saving to database
-            logger.info("📝 Storing medical file record in database... TUNAMAYO");
+         // ✅ Generate file metadata
+            String password = generatePassword();
             MedicalFileEntity medicalFileEntity = new MedicalFileEntity();
             medicalFileEntity.setPatientEmail(patientEmail);
             medicalFileEntity.setDoctorEmail(doctorEmail);
-            medicalFileEntity.setFilePath(filePath);
+            medicalFileEntity.setFilePath(filePath); // Store the path in the database
             medicalFileEntity.setPassword(password);
             medicalFileEntity.setConsultationId(consultationId);
 
-            medicalFileRepository.save(medicalFileEntity);
-            logger.info("File uploaded successfully: {} TUNAMAYO", filePath);
+         // ✅ Save file metadata to the database
+            logger.info("💾 Storing medical file record in database... ELIF");
+            MedicalFileEntity savedFile = medicalFileRepository.save(medicalFileEntity);
+            logger.info("✅ File metadata saved in database! File ID: {} ELIF", savedFile.getId());
+
         } catch (IOException e) {
-            logger.error("Error uploading file for patient: {} TUNAMAYO", patientEmail, e);
-        }
+            logger.error("❌ Error uploading file for patient: {} ELIF", patientEmail, e);
+          }
     }
 
     private String generatePassword() {
@@ -119,21 +138,21 @@ public class MedicalFileService {
                 if (resource.exists()) {
                     return resource;
                 } else {
-                    logger.error("File not found: {} TUNAMAYO", fileId);
+                    logger.error("File not found: {} ELIF", fileId);
                     throw new MalformedURLException("File not found " + fileId);
                 }
             } else {
-                logger.error("File entity not found for ID: {} TUNAMAYO", fileId);
+                logger.error("File entity not found for ID: {} ELIF", fileId);
                 throw new MalformedURLException("File entity not found " + fileId);
             }
         } catch (Exception e) {
-            logger.error("Error loading file as resource for ID: {} TUNAMAYO", fileId, e);
+            logger.error("Error loading file as resource for ID: {} ELIF", fileId, e);
             throw new MalformedURLException("Error loading file " + fileId);
         }
     }
 
     public List<MedicalFile> getFilesByConsultationId(Long consultationId) {
-        logger.info("Fetching files for consultation ID: {} TUNAMAYO", consultationId);
+        logger.info("Fetching files for consultation ID: {} ELIF", consultationId);
         return medicalFileRepository.findByConsultationId(consultationId).stream()
                 .map(medicalFileEntity -> medicalFileMapper.map(medicalFileEntity))
                 .collect(Collectors.toList());

@@ -4,6 +4,8 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
+import java.util.Collections; // ✅ Added for empty lists
+import java.util.Optional;    // ✅ Added for optional values
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.Resource;
@@ -24,101 +26,143 @@ import com.enfocareservice.model.MedicalFile;
 import com.enfocareservice.service.MedicalFileService;
 
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.annotation.Nullable; // ✅ Added for optional request parameters
+
+import org.slf4j.Logger; // ✅ Added for logging
+import org.slf4j.LoggerFactory;
 
 @RestController
 @RequestMapping("/enfocare/medical-file")
 public class MedicalFileController {
 
+	private static final Logger logger = LoggerFactory.getLogger(MedicalFileController.class);
+	
     @Autowired
     private MedicalFileService medicalFileService;
 
+    /**
+     * Upload a diagnosis file and associate it with a consultation.
+     */
+    
     @PostMapping("/upload/{patientEmail}/{doctorEmail}/{consultationId}")
-    public ResponseEntity<String> handleDiagnosisFileUpload(@PathVariable String patientEmail,
-            @PathVariable String doctorEmail, @PathVariable Long consultationId,
+    public ResponseEntity<String> handleDiagnosisFileUpload( 
+    		@PathVariable String patientEmail,
+            @PathVariable String doctorEmail, 
+            @PathVariable Long consultationId,
             @RequestParam("file") MultipartFile file) {
 
-        System.err.println("UPLOAD FILE CALLED");
+    	logger.info("📤 File Upload Requested: {} for Patient: {} by Doctor: {} ELIF", file.getOriginalFilename(), patientEmail, doctorEmail);
 
-        try {
+    	try {
             medicalFileService.uploadDiagnosisFile(patientEmail, doctorEmail, file, consultationId);
+            logger.info("✅ File uploaded successfully: {} ELIF", file.getOriginalFilename());
             return ResponseEntity.ok("Diagnosis file uploaded successfully");
-        } catch (Exception e) {  // ✅ Catching generic exception
-            System.err.println(e);
+        } catch (Exception e) {
+            logger.error("❌ Failed to upload file for Patient: {} by Doctor: {} ELIF", patientEmail, doctorEmail, e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to upload diagnosis file");
-        }
+          }
     }
 
+    /**
+     * Get a list of patient emails associated with a doctor's records.
+     */
+    
     @GetMapping("/patients/{doctorEmail}")
     public ResponseEntity<List<String>> getPatientEmails(@PathVariable String doctorEmail) {
-        try {
-            List<String> patientEmails = medicalFileService.getRecipentEmailsList(doctorEmail);
-            if (patientEmails.isEmpty()) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
-            }
-            return ResponseEntity.ok(patientEmails);
-        } catch (Exception e) {
-            System.err.println(e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
-        }
+    	 try {
+             List<String> patientEmails = medicalFileService.getRecipentEmailsList(doctorEmail);
+             return patientEmails.isEmpty()
+                     ? ResponseEntity.status(HttpStatus.NOT_FOUND).body(null)
+                     : ResponseEntity.ok(patientEmails);
+         } catch (Exception e) {
+             logger.error("❌ Failed to retrieve patient emails for Doctor: {} ELIF", doctorEmail, e);
+             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+           }
     }
-
+    
+    /**
+     * Retrieve file paths for a specific patient.
+     */
     @GetMapping("/files/{patientEmail}")
     public ResponseEntity<List<String>> getPatientFiles(@PathVariable String patientEmail) {
-        try {
+    	try {
             List<String> patientFiles = medicalFileService.getFilePathsForPatient(patientEmail);
-            if (patientFiles.isEmpty()) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
-            }
-            return ResponseEntity.ok(patientFiles);
+            return patientFiles.isEmpty()
+                    ? ResponseEntity.status(HttpStatus.NOT_FOUND).body(null)
+                    : ResponseEntity.ok(patientFiles);
         } catch (Exception e) {
-            System.err.println(e);
+            logger.error("❌ Failed to retrieve files for Patient: {} ELIF", patientEmail, e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }
     }
 
+    /**
+     * Points to the storage where file will be stored.
+     */
     @GetMapping("/download/{patientEmail}/{fileName:.+}")
     public ResponseEntity<Resource> downloadFile(@PathVariable String patientEmail, @PathVariable String fileName) {
         try {
-            Path fileStorageLocation = Paths.get("uploads").toAbsolutePath().normalize();
+            // ✅ Fix: Use the correct mounted storage path
+            Path fileStorageLocation = Paths.get("/app/data/images").toAbsolutePath().normalize();
             Path filePath = fileStorageLocation.resolve(fileName).normalize();
             Resource resource = new UrlResource(filePath.toUri());
 
-            if (resource.exists()) {
-                String contentType = "application/octet-stream"; // Default content type
-                return ResponseEntity.ok()
-                        .contentType(MediaType.parseMediaType(contentType))
-                        .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + resource.getFilename() + "\"")
-                        .body(resource);
-            } else {
+            if (!resource.exists()) {
+                logger.error("❌ File not found: {} for Patient: {} ELIF", fileName, patientEmail);
                 return ResponseEntity.notFound().build();
             }
+
+            logger.info("📥 Downloading file: {} for Patient: {} ELIF", fileName, patientEmail);
+            return ResponseEntity.ok()
+                    .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + resource.getFilename() + "\"")
+                    .body(resource);
         } catch (Exception e) {
-            System.err.println("Error downloading file: " + e.getMessage());
-            return ResponseEntity.internalServerError().body(null);
-        }
+            logger.error("❌ Error downloading file: {} for Patient: {} ELIF", fileName, patientEmail, e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+          }
     }
 
+    /**
+     * Download a file using its ID.
+     */
     @GetMapping("/download/{fileId}")
     public ResponseEntity<Resource> downloadFile(@PathVariable Long fileId, HttpServletRequest request) {
         try {
             Resource resource = medicalFileService.loadFileAsResource(fileId);
-            String contentType = request.getServletContext().getMimeType(resource.getFile().getAbsolutePath());
 
+            if (!resource.exists()) {
+                logger.error("❌ File with ID: {} not found. ELIF", fileId);
+                return ResponseEntity.notFound().build();
+            }
+
+            String contentType = request.getServletContext().getMimeType(resource.getFile().getAbsolutePath());
             if (contentType == null) {
                 contentType = "application/octet-stream";
             }
 
+            logger.info("📥 Downloading file with ID: {} ELIF", fileId);
             return ResponseEntity.ok()
                     .contentType(MediaType.parseMediaType(contentType))
                     .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + resource.getFilename() + "\"")
                     .body(resource);
         } catch (Exception ex) {
-            return ResponseEntity.notFound().build();
-        }
+            logger.error("❌ Error downloading file with ID: {} ELIF", fileId, ex);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+          }
     }
 
+    /**
+     * Retrieve all files associated with a consultation.
+     */
     @GetMapping("/consultation/{consultationId}")
-    public List<MedicalFile> getFilesByConsultationId(@PathVariable Long consultationId) {
-        return medicalFileService.getFilesByConsultationId(consultationId);
+    public ResponseEntity<List<MedicalFile>> getFilesByConsultationId(@PathVariable Long consultationId) {
+        try {
+            List<MedicalFile> files = medicalFileService.getFilesByConsultationId(consultationId);
+            return ResponseEntity.ok(files);
+        } catch (Exception e) {
+            logger.error("❌ Failed to fetch files for Consultation ID: {} ELIF", consultationId, e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+          }
     }
 }
