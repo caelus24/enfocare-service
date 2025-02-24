@@ -40,7 +40,7 @@ public class MedicalFileService {
     @Autowired
     private MedicalFileMapper medicalFileMapper;
 
-    @Value("${medicalfile.dir}")
+    @Value("${medicalfile.dir:/app/data/images}")
     private String diagnosisDir;
 
     public List<String> getRecipentEmailsList(String doctorEmail) {
