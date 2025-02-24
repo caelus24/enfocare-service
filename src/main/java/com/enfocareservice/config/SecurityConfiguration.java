@@ -37,7 +37,7 @@ public class SecurityConfiguration {
 	public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
 
 		http
-        .cors().and()
+        .cors(cors -> cors.configurationSource(corsConfigurationSource())) // ✅ Explicitly applying CORS
         .csrf().disable()
         .authorizeHttpRequests()
         
@@ -45,7 +45,7 @@ public class SecurityConfiguration {
         .requestMatchers("/api/v1/auth/**", "/enfocare/chat/ws/**").permitAll()
         
         // ✅ Allow both patients and doctors to access medical files
-        .requestMatchers("/enfocare/medical-file/**").hasAuthority("USER")
+        .requestMatchers("/enfocare/medical-file/**").permitAll()
         
         // ✅ Any other request requires authentication
         .anyRequest().authenticated()
@@ -72,7 +72,7 @@ public class SecurityConfiguration {
 		CorsConfiguration configuration = new CorsConfiguration();
 		configuration.setAllowedOriginPatterns(List.of("*"));
 		configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-		configuration.setAllowedHeaders(List.of("Authorization", "Content-Type"));
+		configuration.setAllowedHeaders(List.of("*"));
 		configuration.setExposedHeaders(List.of("Authorization"));
 		configuration.setAllowCredentials(true);
 		UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
