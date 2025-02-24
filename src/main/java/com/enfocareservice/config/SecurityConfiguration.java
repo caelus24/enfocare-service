@@ -37,33 +37,23 @@ public class SecurityConfiguration {
 	public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
 
 		http
-        .cors(cors -> cors.configurationSource(corsConfigurationSource())) // ✅ Explicitly applying CORS
-        .csrf().disable()
-        .authorizeHttpRequests()
-        
-        // ✅ Allow public access for login, register, and refresh token
-        .requestMatchers("/api/v1/auth/**", "/enfocare/chat/ws/**").permitAll()
-        
-        // ✅ Allow both patients and doctors to access medical files
-        .requestMatchers("/enfocare/medical-file/**").permitAll()
-        
-        // ✅ Any other request requires authentication
-        .anyRequest().authenticated()
-        
-        .and()
-        .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-        
-        .and()
-        .authenticationProvider(authenticationProvider)
-        .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
-        
-        .logout(logout -> logout
-            .logoutUrl("/api/v1/auth/logout")
-            .addLogoutHandler(logoutHandler)
-            .logoutSuccessHandler((request, response, authentication) -> SecurityContextHolder.clearContext())
-        );
+	    .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+	    .csrf().disable()
+	    .authorizeHttpRequests()
+	        .requestMatchers("/api/v1/auth/**", "/enfocare/chat/ws/**").permitAll()
+	        .requestMatchers("/enfocare/medical-file/**").authenticated() // Require authentication ✅
+	        .anyRequest().authenticated()
+	    .and()
+	    .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS) // Move this inside ✅
+	    .and()
+	    .authenticationProvider(authenticationProvider)
+	    .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+	    .logout(logout -> logout
+	        .logoutUrl("/api/v1/auth/logout")
+	        .addLogoutHandler(logoutHandler)
+	        .logoutSuccessHandler((request, response, authentication) -> SecurityContextHolder.clearContext())
+	    );
 
-    return http.build();
 
 	}
 
@@ -72,7 +62,7 @@ public class SecurityConfiguration {
 		CorsConfiguration configuration = new CorsConfiguration();
 		configuration.setAllowedOriginPatterns(List.of("https://enfocare-service-production.up.railway.app"));
 		configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-		configuration.setAllowedHeaders(List.of("*"));
+		configuration.setAllowedHeaders(List.of("Authorization", "Content-Type"));
 		configuration.setExposedHeaders(List.of("Authorization"));
 		configuration.setAllowCredentials(true);
 		UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
