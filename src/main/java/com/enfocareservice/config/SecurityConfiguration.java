@@ -36,25 +36,25 @@ public class SecurityConfiguration {
 	@Bean
 	public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
 
-		http
-	    .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-	    .csrf().disable()
-	    .authorizeHttpRequests()
-	        .requestMatchers("/api/v1/auth/**", "/enfocare/chat/ws/**").permitAll()
-	        .requestMatchers("/enfocare/medical-file/**").authenticated() // Require authentication ✅
-	        .anyRequest().authenticated()
-	    .and()
-	    .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS) // Move this inside ✅
-	    .and()
-	    .authenticationProvider(authenticationProvider)
-	    .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
-	    .logout(logout -> logout
-	        .logoutUrl("/api/v1/auth/logout")
-	        .addLogoutHandler(logoutHandler)
-	        .logoutSuccessHandler((request, response, authentication) -> SecurityContextHolder.clearContext())
-	    );
+	    http
+	        .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+	        .csrf().disable()
+	        .authorizeHttpRequests()
+	            .requestMatchers("/api/v1/auth/**", "/enfocare/chat/ws/**").permitAll()
+	            .requestMatchers("/enfocare/medical-file/**").authenticated() // Require authentication ✅
+	            .anyRequest().authenticated()
+	        .and()
+	        .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS) // Move this inside ✅
+	        .and()
+	        .authenticationProvider(authenticationProvider)
+	        .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+	        .logout(logout -> logout
+	            .logoutUrl("/api/v1/auth/logout")
+	            .addLogoutHandler(logoutHandler)
+	            .logoutSuccessHandler((request, response, authentication) -> SecurityContextHolder.clearContext())
+	        );
 
-
+	    return http.build();
 	}
 
 	@Bean
