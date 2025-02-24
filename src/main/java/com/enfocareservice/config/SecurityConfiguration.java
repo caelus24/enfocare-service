@@ -36,23 +36,41 @@ public class SecurityConfiguration {
 	@Bean
 	public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
 
-		http.csrf().disable().authorizeHttpRequests()
-				.requestMatchers("/api/v1/**", "/api/v1/auth/**", "/enfocare/chat/ws/**").permitAll().anyRequest()
-				.authenticated().and().sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS).and()
-				.authenticationProvider(authenticationProvider)
-				.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
-				.logout(logout -> logout.logoutUrl("/api/v1/auth/logout").addLogoutHandler(logoutHandler)
-						.logoutSuccessHandler(
-								(request, response, authentication) -> SecurityContextHolder.clearContext()));
+		http
+        .cors().and()
+        .csrf().disable()
+        .authorizeHttpRequests()
+        
+        // ✅ Allow public access for login, register, and refresh token
+        .requestMatchers("/api/v1/auth/**", "/enfocare/chat/ws/**").permitAll()
+        
+        // ✅ Allow both patients and doctors to access medical files
+        .requestMatchers("/enfocare/medical-file/**").hasAnyRole("DOCTOR", "PATIENT")
+        
+        // ✅ Any other request requires authentication
+        .anyRequest().authenticated()
+        
+        .and()
+        .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+        
+        .and()
+        .authenticationProvider(authenticationProvider)
+        .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+        
+        .logout(logout -> logout
+            .logoutUrl("/api/v1/auth/logout")
+            .addLogoutHandler(logoutHandler)
+            .logoutSuccessHandler((request, response, authentication) -> SecurityContextHolder.clearContext())
+        );
 
-		return http.build();
+    return http.build();
 
 	}
 
 	@Bean
 	public CorsConfigurationSource corsConfigurationSource() {
 		CorsConfiguration configuration = new CorsConfiguration();
-		configuration.setAllowedOriginPatterns(List.of("https://enfocare-service-production.up.railway.app/"));
+		configuration.setAllowedOriginPatterns(List.of("*"));
 		configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
 		configuration.setAllowedHeaders(List.of("Authorization", "Content-Type"));
 		configuration.setExposedHeaders(List.of("Authorization"));
