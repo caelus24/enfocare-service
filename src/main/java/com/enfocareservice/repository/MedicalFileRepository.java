@@ -1,15 +1,19 @@
 package com.enfocareservice.repository;
 
 import java.util.List;
+import java.util.Optional;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+
 import com.enfocareservice.entity.MedicalFileEntity;
 
 @Repository
 public interface MedicalFileRepository extends JpaRepository<MedicalFileEntity, Long> {
-	 /**
+
+    /**
      * Get a distinct list of patient emails who have uploaded medical files for a specific doctor.
      */
     @Query(value = "SELECT DISTINCT patient_email FROM medical_file WHERE doctor_email = :doctorEmail", nativeQuery = true)
@@ -30,4 +34,15 @@ public interface MedicalFileRepository extends JpaRepository<MedicalFileEntity, 
      * Retrieve all medical files related to a specific consultation ID and doctor email.
      */
     List<MedicalFileEntity> findByConsultationIdAndDoctorEmail(Long consultationId, String doctorEmail);
+
+    /**
+     * Retrieve a specific medical file by patient email and filename.
+     */
+    @Query(value = "SELECT * FROM medical_file WHERE patient_email = :patientEmail AND file_path LIKE %:fileName%", nativeQuery = true)
+    Optional<MedicalFileEntity> getFileByPatientAndFileName(@Param("patientEmail") String patientEmail, @Param("fileName") String fileName);
+
+    /**
+     * Retrieve a medical file by its ID.
+     */
+    Optional<MedicalFileEntity> getFileById(Long fileId);
 }

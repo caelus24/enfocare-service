@@ -117,37 +117,41 @@ public class MedicalFileService {
     public List<String> getFilePathsForPatient(String patientEmail) {
         return medicalFileRepository.findFilePathsByPatientEmail(patientEmail);
     }
+    
+    public Optional<MedicalFileEntity> getFileByPatientAndFileName(String patientEmail, String fileName) {
+        return medicalFileRepository.findByPatientEmailAndFilePathContaining(patientEmail, fileName);
+    }
 
-    public Resource loadFileAsResource(Long fileId) throws MalformedURLException {
+    public Optional<MedicalFileEntity> getFileById(Long fileId) {
+        return medicalFileRepository.findById(fileId);
+    }
+
+    public Resource loadFileAsResource(Long fileId) throws IOException {
         try {
             Optional<MedicalFileEntity> fileEntityOptional = medicalFileRepository.findById(fileId);
             if (fileEntityOptional.isPresent()) {
-                Path filePath = Paths.get(fileEntityOptional.get().getFilePath()).normalize(); // ✅ Normalize first
-                File file = filePath.toFile();
-                
-                if (!file.exists()) {
-                    logger.error("❌ File not found: {} ELIF", filePath);
-                    throw new MalformedURLException("File not found " + fileId);
-                }
-
-                // ✅ Ensure PDF encryption happens on the correct path
-                protectPdfFile(filePath.toString());
-
+                Path filePath = Paths.get(fileEntityOptional.get().getFilePath()).normalize();
                 Resource resource = new UrlResource(filePath.toUri());
+
+                // ✅ Check if the file exists and is readable
                 if (resource.exists() && resource.isReadable()) {
                     logger.info("✅ Successfully loaded file: {} ELIF", filePath);
+
+                    // ✅ Now apply encryption after verifying file exists
+                    protectPdfFile(filePath.toString());
+
                     return resource;
                 } else {
                     logger.error("❌ Unable to read file: {} ELIF", filePath);
-                    throw new MalformedURLException("File cannot be read " + fileId);
+                    throw new IOException("File cannot be read: " + fileId);
                 }
             } else {
                 logger.error("❌ File entity not found for ID: {} ELIF", fileId);
-                throw new MalformedURLException("File entity not found " + fileId);
+                throw new IOException("File entity not found: " + fileId);
             }
         } catch (Exception e) {
             logger.error("❌ Error loading file as resource for ID: {} ELIF", fileId, e);
-            throw new MalformedURLException("Error loading file " + fileId);
+            throw new IOException("Error loading file: " + fileId, e);
         }
     }
 
