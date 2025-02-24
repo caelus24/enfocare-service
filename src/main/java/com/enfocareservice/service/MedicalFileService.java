@@ -118,12 +118,14 @@ public class MedicalFileService {
         return medicalFileRepository.findFilePathsByPatientEmail(patientEmail);
     }
     
-    public Optional<MedicalFileEntity> getFileByPatientAndFileName(String patientEmail, String fileName) {
-        return medicalFileRepository.findByPatientEmailAndFilePathContaining(patientEmail, fileName);
+    public Optional<MedicalFile> getFileByPatientAndFileName(String patientEmail, String fileName) {
+        return medicalFileRepository.getFileByPatientAndFileName(patientEmail, fileName)
+            .map(medicalFileMapper::map); // ✅ Convert Entity to Model
     }
 
-    public Optional<MedicalFileEntity> getFileById(Long fileId) {
-        return medicalFileRepository.findById(fileId);
+    public Optional<MedicalFile> getFileById(Long fileId) {
+        return medicalFileRepository.getFileById(fileId)
+            .map(medicalFileMapper::map); // ✅ Convert Entity to Model
     }
 
     public Resource loadFileAsResource(Long fileId) throws IOException {
