@@ -45,7 +45,7 @@ public class SecurityConfiguration {
         .requestMatchers("/api/v1/auth/**", "/enfocare/chat/ws/**").permitAll()
         
         // ✅ Allow both patients and doctors to access medical files
-        .requestMatchers("/enfocare/medical-file/**").hasAnyRole("DOCTOR", "PATIENT")
+        .requestMatchers("/enfocare/medical-file/**").hasAuthority("USER")
         
         // ✅ Any other request requires authentication
         .anyRequest().authenticated()
