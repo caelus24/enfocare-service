@@ -182,5 +182,21 @@ public class MedicalFileController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Collections.emptyList());
         }
     }
+    
+    @GetMapping("/consultation/{consultationId}/patient/{patientEmail}")
+    public ResponseEntity<List<MedicalFile>> getFilesByConsultationAndPatient(
+            @PathVariable Long consultationId, @PathVariable String patientEmail) {
+        try {
+            List<MedicalFile> files = medicalFileService.getFilesByConsultationAndPatient(consultationId, patientEmail);
+            if (files.isEmpty()) {
+                logger.warn("⚠️ No files found for Consultation ID: {} and Patient: {} ELIF", consultationId, patientEmail);
+            }
+            return ResponseEntity.ok(files);
+        } catch (Exception e) {
+            logger.error("❌ Failed to fetch files for Consultation ID: {} and Patient: {} ELIF", consultationId, patientEmail, e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Collections.emptyList());
+        }
+    }
+
 
 }

@@ -41,11 +41,11 @@ public class SecurityConfiguration {
 	        .csrf().disable()
 	        .authorizeHttpRequests()
 	            .requestMatchers("/api/v1/auth/**", "/enfocare/chat/ws/**").permitAll()
-	            .requestMatchers("/enfocare/medical-file/**").authenticated() // Require authentication ✅
+	            .requestMatchers("/enfocare/medical-file/**").permitAll() // Require authentication ✅
 	            .anyRequest().authenticated()
 	        .and()
 	        .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS) // Move this inside ✅
-	        .and()
+	        .and() 
 	        .authenticationProvider(authenticationProvider)
 	        .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
 	        .logout(logout -> logout

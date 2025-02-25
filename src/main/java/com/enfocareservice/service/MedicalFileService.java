@@ -159,7 +159,7 @@ public class MedicalFileService {
 
 
     public List<MedicalFile> getFilesByConsultationId(Long consultationId) {
-        logger.info("Fetching files for consultation ID: {}", consultationId);
+        logger.info("Fetching files for consultation ID: {} ELIF", consultationId);
         return medicalFileRepository.findByConsultationId(consultationId).stream()
                 .map(medicalFileEntity -> {
                     MedicalFile file = medicalFileMapper.map(medicalFileEntity);
@@ -174,9 +174,17 @@ public class MedicalFileService {
     }
 
     public List<MedicalFile> getFilesByConsultationAndDoctor(Long consultationId, String doctorEmail) {
-        logger.info("Fetching files for Consultation ID: {} and Doctor: {}", consultationId, doctorEmail);
+        logger.info("Fetching files for Consultation ID: {} and Doctor: {} ELIF", consultationId, doctorEmail);
         return medicalFileRepository.findByConsultationIdAndDoctorEmail(consultationId, doctorEmail).stream()
                 .map(medicalFileMapper::map)
                 .collect(Collectors.toList());
     }
+    
+    public List<MedicalFile> getFilesByConsultationAndPatient(Long consultationId, String patientEmail) {
+        logger.info("📄 Fetching files for Consultation ID: {} and Patient: {} ELIF", consultationId, patientEmail);
+        return medicalFileRepository.findByConsultationIdAndPatientEmail(consultationId, patientEmail).stream()
+                .map(medicalFileMapper::map)
+                .collect(Collectors.toList());
+    }
+
 }

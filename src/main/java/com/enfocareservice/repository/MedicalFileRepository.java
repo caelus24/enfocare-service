@@ -36,6 +36,11 @@ public interface MedicalFileRepository extends JpaRepository<MedicalFileEntity, 
     List<MedicalFileEntity> findByConsultationIdAndDoctorEmail(Long consultationId, String doctorEmail);
 
     /**
+     * Retrieve all medical files related to a specific consultation ID and patient email.
+     */
+    List<MedicalFileEntity> findByConsultationIdAndPatientEmail(Long consultationId, String patientEmail);
+
+    /**
      * Retrieve a specific medical file by patient email and filename.
      */
     @Query(value = "SELECT * FROM medical_file WHERE patient_email = :patientEmail AND file_path LIKE %:fileName%", nativeQuery = true)
