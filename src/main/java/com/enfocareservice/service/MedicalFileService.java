@@ -167,7 +167,7 @@ public class MedicalFileService {
                 .map(medicalFileEntity -> {
                     MedicalFile file = medicalFileMapper.map(medicalFileEntity);
                     
-                    // ✅ Set file URL correctly using the file ID
+                    // ✅ Ensure fileUrl is set
                     file.setFileUrl(baseUrl + file.getId());
                     
                     return file;
@@ -175,18 +175,37 @@ public class MedicalFileService {
                 .collect(Collectors.toList());
     }
 
-
     public List<MedicalFile> getFilesByConsultationAndDoctor(Long consultationId, String doctorEmail) {
         logger.info("Fetching files for Consultation ID: {} and Doctor: {} ELIF", consultationId, doctorEmail);
+
+        String baseUrl = "https://enfocare-service-production.up.railway.app/enfocare/medical-file/download/";
+
         return medicalFileRepository.findByConsultationIdAndDoctorEmail(consultationId, doctorEmail).stream()
-                .map(medicalFileMapper::map)
+                .map(medicalFileEntity -> {
+                    MedicalFile file = medicalFileMapper.map(medicalFileEntity);
+
+                    // ✅ Ensure fileUrl is set
+                    file.setFileUrl(baseUrl + file.getId());
+
+                    return file;
+                })
                 .collect(Collectors.toList());
     }
-    
+
     public List<MedicalFile> getFilesByConsultationAndPatient(Long consultationId, String patientEmail) {
         logger.info("📄 Fetching files for Consultation ID: {} and Patient: {} ELIF", consultationId, patientEmail);
+
+        String baseUrl = "https://enfocare-service-production.up.railway.app/enfocare/medical-file/download/";
+
         return medicalFileRepository.findByConsultationIdAndPatientEmail(consultationId, patientEmail).stream()
-                .map(medicalFileMapper::map)
+                .map(medicalFileEntity -> {
+                    MedicalFile file = medicalFileMapper.map(medicalFileEntity);
+
+                    // ✅ Ensure fileUrl is set
+                    file.setFileUrl(baseUrl + file.getId());
+
+                    return file;
+                })
                 .collect(Collectors.toList());
     }
 
